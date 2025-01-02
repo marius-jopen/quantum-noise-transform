@@ -5,7 +5,7 @@ from pathlib import Path
 
 def transform_qn_samples_to_latent():
     # Get the base directory (quantum-noise-transform)
-    current_dir = Path(__file__).parent.parent.absolute()  # Go up from 'functions' to base
+    current_dir = Path(__file__).parent.parent.absolute()
     
     # Set exact paths
     input_dir = current_dir / "input/qn-full"
@@ -15,26 +15,11 @@ def transform_qn_samples_to_latent():
     print(f"Looking for input files in: {input_dir}")
     print(f"Will save output files to: {output_dir}")
     
-    # Check if input directory exists
-    if not input_dir.exists():
-        print(f"ERROR: Input directory does not exist: {input_dir}")
-        print("Creating input directory structure...")
-        input_dir.mkdir(parents=True, exist_ok=True)
-        return
-    
     # Create output directory if it doesn't exist
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # List all files in input directory
-    input_files = list(input_dir.glob("*.csv"))
-    if not input_files:
-        print(f"No CSV files found in {input_dir}")
-        return
-        
-    print(f"Found {len(input_files)} CSV files: {[f.name for f in input_files]}")
-    
     # Process each CSV file in the input directory
-    for file_path in input_files:
+    for file_path in input_dir.glob("*.csv"):
         try:
             print(f"\nProcessing file: {file_path}")
             
@@ -55,8 +40,11 @@ def transform_qn_samples_to_latent():
             # Take maximum 100 latents to keep file size manageable
             num_latents = min(num_latents, 100)
             
-            # Reshape into multiple latents
+            # Reshape into multiple latents with batch dimension first
             latents = tensor_data[:num_latents * single_latent_size].reshape(num_latents, 4, 128, 128)
+            
+            # Add an extra batch dimension to match expected format [B, 1, C, H, W]
+            latents = latents.unsqueeze(1)  # Shape becomes [num_latents, 1, 4, 128, 128]
             
             print(f"Transformed shape: {latents.shape}")
             
